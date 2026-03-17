@@ -8,17 +8,17 @@
 
 | Field               | Value                        |
 |---------------------|------------------------------|
-| **Current Phase**   | Phase 5 — Mobile polish + PWA (complete) |
-| **Last Session**    | Session 2                    |
+| **Current Phase**   | MVP complete — all 5 phases done |
+| **Last Session**    | Session 3                    |
 | **Last Updated**    | 2026-03-17                   |
-| **Blocker**         | None |
-| **Next Action**     | End-to-end testing on real devices |
+| **Blocker**         | React client WebSocket fails on mobile Safari (see Known Issues) |
+| **Next Action**     | Stretch goals or React debugging |
 
 ---
 
 ## Project Overview
 
-**Mac Mirror** is a real-time screen-mirroring tool that captures a Mac's display and streams it to any device (phone, tablet, laptop) over Tailscale. Unlike the reference project (Desk Mirror), which streams window *metadata* as coloured blocks, Mac Mirror streams **actual screen pixels** with full **remote input control** — making it a lightweight, self-hosted VNC alternative.
+**Mac Mirror** is a real-time screen-mirroring tool that captures a Mac's display and streams it to any device (phone, tablet, laptop) over Tailscale. Streams **actual screen pixels** with full **remote input control** — a lightweight, self-hosted VNC alternative.
 
 ---
 
@@ -26,27 +26,17 @@
 
 ```
 ┌──────────────────┐    WebSocket     ┌──────────────────┐    WebSocket     ┌──────────────────┐
-│  CAPTURE DAEMON   │ ──────────────→ │   RELAY SERVER    │ ←─────────────→ │   BROWSER CLIENT  │
-│  (Node.js)        │ ←────────────── │   (Node.js)       │                 │   (React PWA)     │
+│  CAPTURE DAEMON   │ ──────────────→ │   RELAY SERVER    │ ←─────────────→ │     VIEWER        │
+│  (Node.js)        │ ←────────────── │   (Node.js)       │                 │  (plain HTML/JS)  │
 │                   │   input cmds    │                   │                 │                   │
 │ • Screen capture  │                 │ • Relay frames    │                 │ • Render frames   │
-│ • Input injection │                 │ • Route input     │                 │ • Capture input   │
-│ • JPEG encoding   │                 │ • Health/status   │                 │ • Pinch-to-zoom   │
+│ • Input injection │                 │ • Route input     │                 │ • Touch → click   │
+│ • JPEG encoding   │                 │ • Serve viewer    │                 │ • Virtual keyboard│
 └──────────────────┘                  └──────────────────┘                  └──────────────────┘
                                               │
                                     All on Tailscale network
+                                    Single port: 3847
 ```
-
-### How It Differs from Desk Mirror (Reference)
-
-| Aspect | Desk Mirror (Reference) | Mac Mirror (This Project) |
-|--------|------------------------|---------------------------|
-| **What's streamed** | Window metadata (positions, sizes) as JSON | Actual screen pixels as JPEG frames |
-| **Visual output** | Coloured blocks representing windows | Real screen content |
-| **Remote input** | Focus/move/close/space-switch commands | Full mouse + keyboard control |
-| **Daemon language** | Python (pyobjc) | Node.js/TypeScript |
-| **Streaming protocol** | JSON over WebSocket (~1KB/msg) | Binary JPEG over WebSocket (~30-100KB/frame) |
-| **Use case** | Window arrangement overview | Full remote desktop |
 
 ---
 
@@ -54,11 +44,11 @@
 
 | Component | Technology | Why |
 |-----------|-----------|-----|
-| Capture Daemon | Node.js 20+, TypeScript | Unified codebase, CLAUDE.md preference |
-| Screen Capture | macOS `screencapture` CLI | Zero native deps, reliable, built-in |
-| Relay Server | Node.js 20+, Express, ws | Lightweight WebSocket relay (same as reference) |
-| Browser Client | React 18, Vite, TypeScript | PWA-capable, touch events, fast dev cycle |
-| Input Injection | `cliclick` (Homebrew) | Simple CLI tool for mouse/keyboard events |
+| Capture Daemon | Node.js 20+, TypeScript | Unified codebase |
+| Screen Capture | macOS `screencapture` + `sips` | Zero native deps, built-in |
+| Relay Server | Node.js 20+, Express 5, ws | Lightweight WebSocket relay |
+| Viewer | Vanilla HTML/JS (258 lines) | Reliable on mobile Safari (React version has WebSocket issues) |
+| Input Injection | `cliclick` (mouse/keyboard), `osascript` (scroll) | Simple CLI tools, no native addons |
 | Networking | Tailscale | Zero-config secure mesh, network IS the auth |
 
 ---
@@ -67,44 +57,14 @@
 
 | # | Decision | Reasoning | Date |
 |---|----------|-----------|------|
-| 1 | MJPEG over WebSocket, not WebRTC | Tailscale provides direct connectivity — no NAT traversal needed. WebSocket is simpler to implement, debug, and maintain. WebRTC can be added later if latency is insufficient. | 2026-03-17 |
-| 2 | All Node.js/TypeScript (no Python daemon) | CLAUDE.md says "prefer Node.js/TypeScript". Unified codebase, single package manager. We lose pyobjc's Quartz bindings but gain simplicity. | 2026-03-17 |
-| 3 | `screencapture` CLI for frame capture | Zero dependencies — built into macOS. Reliable. Outputs JPEG directly. ~10 FPS achievable. Can upgrade to `node-screenshots` later if needed. | 2026-03-17 |
-| 4 | `cliclick` for input injection | Simple Homebrew package. Handles mouse clicks, moves, keyboard input. No native addon compilation. Can upgrade to CGEvent-based Swift helper later. | 2026-03-17 |
-| 5 | Server is a dumb frame relay | Binary frames pass through unchanged — no decoding/re-encoding. Server only parses JSON input commands. Keeps server simple and CPU-light. | 2026-03-17 |
-| 6 | British English throughout | User preference, matching reference project conventions. | 2026-03-17 |
-| 7 | Tailscale-only networking | Same as reference. Network IS the auth layer. No login screens, no tokens. | 2026-03-17 |
-
----
-
-## Reference Codebase Analysis
-
-### What We're Borrowing
-
-1. **Three-tier architecture** — daemon → relay server → browser client. Clean separation. WebSocket everywhere.
-2. **Relay server pattern** — Express + ws, `/daemon` and `/client` paths, single daemon slot + client pool, connection management with rooms/state modules.
-3. **Structured JSON logging** — same `logger.ts` pattern.
-4. **Config approach** — `config.json` at repo root + env var overrides. Single source of truth.
-5. **Client patterns** — React hooks architecture (`useWebSocket`, `useLayout`), auto-reconnect with exponential backoff, Settings screen with localStorage, PWA service worker, dark theme, mobile-first.
-6. **Status broadcasting** — periodic status messages with connection state and latency.
-7. **Start scripts** — pre-flight checks, dependency install, Tailscale IP detection, process management with signal handling.
-
-### What We're Changing
-
-1. **Binary frames instead of JSON layout** — daemon sends JPEG buffers, not JSON window objects. Server relays as binary WebSocket messages.
-2. **Input protocol is different** — instead of window-level commands (focus, move, close), we send raw mouse/keyboard events (click at x,y; key press; scroll).
-3. **No diffing logic** — every frame is a full screenshot. No `differ.py` equivalent needed.
-4. **No window metadata** — no `WindowData`, `LayoutDiff`, etc. Just frames.
-5. **Canvas rendering** — client renders frames onto an `<img>` or `<canvas>`, not positioned `<div>` blocks.
-6. **Pinch-to-zoom** — client needs gesture handling for zoom/pan, since we're viewing real screen content.
-7. **Virtual keyboard** — client needs a way to trigger keyboard input.
-
-### Limitations of the Reference Approach
-
-- Desk Mirror only shows window positions, not content — useful as a minimap but not for actual remote work.
-- Python daemon requires pyobjc, which is macOS-only and can be finicky to install.
-- JSON-only protocol doesn't support binary data efficiently.
-- No screen content means no ability to read text or see application state remotely.
+| 1 | MJPEG over WebSocket, not WebRTC | Tailscale provides direct connectivity. WebSocket is simpler. | 2026-03-17 |
+| 2 | All Node.js/TypeScript | Unified codebase, single package manager. | 2026-03-17 |
+| 3 | `screencapture` CLI for frame capture | Zero deps, built into macOS. ~3-5 FPS achievable. | 2026-03-17 |
+| 4 | `cliclick` for input injection | Simple Homebrew package. No native compilation. | 2026-03-17 |
+| 5 | Server is a dumb frame relay | Binary frames pass through unchanged. Keeps server CPU-light. | 2026-03-17 |
+| 6 | Plain HTML viewer instead of React | React WebSocket hook fails on mobile Safari (unknown cause). Inline HTML/JS viewer connects reliably. | 2026-03-17 |
+| 7 | Single port (3847) for everything | Server serves viewer HTML at `/`, WebSocket at `/client` and `/daemon`, health at `/health`. No separate Vite port needed. | 2026-03-17 |
+| 8 | Start scripts kill stale processes | Multiple daemon instances cause a connect/disconnect loop fighting for the single daemon slot. Scripts now pkill before starting. | 2026-03-17 |
 
 ---
 
@@ -112,83 +72,59 @@
 
 ```
 mac-mirror/
-├── CLAUDE.md              ← Project goals and preferences
+├── config.json            ← FPS, quality, scale, port
+├── package.json           ← Root deps (express, ws, tsx, typescript)
+├── start.sh               ← Dev launcher (kills stale, starts all)
+├── start-prod.sh          ← Prod launcher (builds client, starts all)
+├── README.md              ← User-facing docs
 ├── docs/
-│   ├── PRIMER.md          ← This file — project memory
-│   ├── DEVLOG.md          ← Reverse-chronological dev log
-│   ├── TODO.md            ← Task tracker
-│   └── PROTOCOL.md        ← WebSocket protocol spec (future)
-├── config.json            ← Central configuration
-├── package.json           ← Monorepo root
-├── .gitignore
-├── README.md              ← Public-facing documentation
-├── start.sh               ← Dev launcher
-├── start-prod.sh          ← Production launcher
+│   ├── PRIMER.md          ← This file
+│   ├── DEVLOG.md          ← Dev log
+│   └── TODO.md            ← Task tracker
 ├── src/
 │   ├── daemon/            ← Screen capture + input injection
 │   │   ├── index.ts       ← Entry point — capture loop + WS client
-│   │   ├── capture.ts     ← Screen capture via screencapture CLI
-│   │   ├── input.ts       ← Mouse/keyboard injection via cliclick
-│   │   └── config.ts      ← Daemon config loader
-│   ├── server/            ← WebSocket relay
-│   │   ├── index.ts       ← Express + WS server
-│   │   ├── rooms.ts       ← Connection management
-│   │   ├── config.ts      ← Server config loader
+│   │   ├── capture.ts     ← screencapture + sips pipeline
+│   │   ├── input.ts       ← cliclick mouse/keyboard, osascript scroll
+│   │   └── config.ts      ← Config loader
+│   ├── server/            ← WebSocket relay + HTTP
+│   │   ├── index.ts       ← Express + WS server, serves viewer at /
+│   │   ├── rooms.ts       ← Daemon slot + client pool + broadcasting
+│   │   ├── config.ts      ← Port + status interval
 │   │   └── logger.ts      ← Structured JSON logging
-│   └── client/            ← React PWA
-│       ├── index.html
-│       ├── vite.config.ts
+│   ├── viewer/            ← The viewer that actually works on mobile
+│   │   └── index.html     ← 258-line standalone viewer with full input
+│   └── client/            ← React PWA (builds but WebSocket broken on mobile)
 │       ├── package.json
-│       ├── tsconfig.json
-│       ├── public/
-│       │   ├── manifest.json
-│       │   └── sw.js
-│       └── src/
-│           ├── main.tsx
-│           ├── App.tsx
-│           ├── components/
-│           │   ├── ScreenView.tsx    ← Frame renderer (canvas/img)
-│           │   ├── TouchOverlay.tsx  ← Input capture layer
-│           │   ├── StatusBar.tsx     ← Connection status
-│           │   └── Settings.tsx      ← Server URL config
-│           ├── hooks/
-│           │   ├── useWebSocket.ts   ← WS connection + binary frames
-│           │   ├── useInput.ts       ← Touch/mouse → input commands
-│           │   └── useZoom.ts        ← Pinch-to-zoom gestures
-│           └── lib/
-│               └── protocol.ts       ← Message type definitions
+│       ├── vite.config.ts
+│       └── src/            ← App, hooks, components (useWebSocket, useInput, etc.)
 ```
-
----
-
-## What Has Been Built
-
-- Project scaffold (docs, .gitignore, README placeholder)
-- Reference codebase analysis complete
-- **Capture Daemon** (`src/daemon/`) — Node.js daemon that captures macOS screen via `screencapture` CLI, post-processes with `sips` for quality/scale control, streams binary JPEG frames over WebSocket. Two modes: `--stdout` for testing, WebSocket for server connection. Auto-reconnect, graceful shutdown, structured logging.
-- **Relay Server** (`src/server/`) — Express + ws server on port 3847. `/daemon` path accepts single daemon connection (binary JPEG frames), `/client` path accepts multiple browser clients (JSON input commands). Relays frames daemon → clients, routes input clients → daemon. `/health` HTTP endpoint. Status broadcast every 5s with FPS, latency, client count. Graceful shutdown.
-- **Browser Client** (`src/client/`) — React 18 + Vite + TypeScript PWA. WebSocket hook receives binary JPEG frames as object URLs and JSON status messages. ScreenView renders frames in `<img>` with responsive scaling. StatusBar shows connection state, FPS, latency. Settings overlay for server URL (localStorage). Dark theme (#0a0a0a), mobile-first.
-- **Remote Input** — Daemon: `input.ts` injects mouse/keyboard via `cliclick`, scroll via osascript CGEvent. Client: `useInput` hook maps viewport touch/mouse to Mac screen coordinates, `TouchOverlay` captures gestures, `VirtualKeyboard` for text input. Protocol: `input:mouse`, `input:scroll`, `input:key`, `input:text` JSON messages routed through relay server.
-- **Mobile Polish + PWA** — `useZoom` hook (pinch-to-zoom 1x–5x, pan when zoomed, double-tap reset). PWA manifest + service worker (offline shell cache). Haptic feedback on taps. `start.sh` (dev launcher with pre-flight checks, Tailscale IP detection) and `start-prod.sh` (build + serve).
 
 ---
 
 ## What Works
 
-- `npm run daemon -- --stdout` — runs capture loop, logs frame stats (requires Screen Recording permission)
-- `npm run daemon` — connects to relay server at configured host:port, streams binary frames
-- `npm run server` — starts relay server on port 3847, `/health` endpoint responds
-- `npm run client` — starts Vite dev server on port 5173
-- `npm run client:build` — production build to `src/client/dist/`
-- TypeScript strict mode, clean compile
-- Config loading from config.json + env var overrides
-- Graceful permission error handling with clear user instructions
+- `./start-prod.sh` — full production launch (build + server + daemon)
+- `http://<tailscale-ip>:3847` — viewer with live screen + touch input
+- Tap to click, double-tap, two-finger right-click, drag to move windows
+- Virtual keyboard for typing (keyboard icon in status bar)
+- `/health` endpoint returns JSON with daemon/client/uptime status
+- Auto-reconnect on phone unlock
+- ~3-4 FPS at 0.5x scale, ~150-250KB per frame
+- 2,347 lines of code total
 
 ---
 
-## What's Broken
+## Known Issues
 
-_N/A_
+### React client WebSocket fails on mobile Safari
+The React app (`src/client/`) builds and works on desktop browsers but the WebSocket connection never establishes on mobile Safari. The exact same WebSocket URL works in a plain `<script>` tag (proven with the wstest page). Root cause unknown — possibly React StrictMode effect lifecycle, useEffect cleanup timing, or mobile Safari quirk. The standalone viewer (`src/viewer/index.html`) was built as a workaround and is now the primary UI.
+
+### screencapture FPS ceiling
+The `screencapture` CLI approach tops out at ~3-5 FPS due to disk I/O (capture to temp file, read, delete). Could be improved by switching to `node-screenshots` (native addon) or a Swift helper using `CGWindowListCreateImage`.
+
+### Daemon connect/disconnect loop
+Happens when multiple daemon processes compete for the single daemon slot. Fixed by: start scripts now kill stale processes before launching. Race condition in `removeDaemon` also fixed (checks WebSocket identity before clearing).
 
 ---
 
@@ -197,8 +133,8 @@ _N/A_
 - **Host machine:** macOS (primary target)
 - **Viewing devices:** iPhone, iPad, laptop browser (any device on Tailscale)
 - **Network:** Tailscale mesh
-- **Node version:** 20+
-- **Required tools:** `screencapture` (built-in), `cliclick` (Homebrew)
+- **Node version:** 20+ (tested on 24.10.0)
+- **Required tools:** `screencapture` (built-in), `sips` (built-in), `cliclick` (Homebrew)
 
 ---
 
@@ -206,20 +142,26 @@ _N/A_
 
 > Most recent at the top.
 
+### Session 3 — End-to-end testing + fixes
+- **Date:** 2026-03-17
+- **What happened:** Tested on real iPhone over Tailscale. Discovered React WebSocket hook doesn't connect on mobile Safari (unknown cause). Built /wstest diagnostic page, confirmed WebSocket works with plain JS. Created standalone viewer (`src/viewer/index.html`, 258 lines) with full input support (tap, double-tap, right-click, drag, virtual keyboard, haptic feedback, auto-reconnect). Made server serve viewer at `/` on port 3847. Fixed daemon connect/disconnect loop caused by duplicate processes — added stale process cleanup to start scripts and race condition fix in removeDaemon. Server now binds to 0.0.0.0 explicitly. Comprehensive README rewrite. All pushed to GitHub.
+- **What's next:** Stretch goals (WebRTC, multi-monitor, clipboard sync) or debug React mobile Safari issue.
+- **Blockers:** None — MVP is working.
+
 ### Session 2 — Phases 2–5: Full build
 - **Date:** 2026-03-17
-- **What happened:** Built all remaining phases in one session. Phase 2: relay server (Express + ws, /daemon, /client, /health). Phase 3: browser client (React + Vite, useWebSocket, ScreenView, StatusBar, Settings). Phase 4: remote input (cliclick mouse/keyboard, osascript scroll, useInput, TouchOverlay, VirtualKeyboard). Phase 5: useZoom (pinch 1x–5x, pan, double-tap reset), PWA manifest + service worker, haptic feedback, start.sh + start-prod.sh. All compiles clean, Vite build passes.
-- **What's next:** End-to-end testing on real devices over Tailscale.
+- **What happened:** Built all remaining phases. Phase 2: relay server. Phase 3: React browser client. Phase 4: remote input (cliclick + touch mapping). Phase 5: pinch-to-zoom, PWA, haptic feedback, start scripts.
+- **What's next:** End-to-end testing.
 - **Blockers:** None.
 
 ### Session 1 — Phase 1: Capture Daemon
 - **Date:** 2026-03-17
-- **What happened:** Set up Node.js project (package.json, tsconfig.json, deps: ws, express, tsx, typescript). Created config.json. Built capture daemon with three files: config.ts (config loading), capture.ts (screen capture via screencapture + sips), index.ts (entry point with stdout/WebSocket modes). Added permission warning for Screen Recording. TypeScript compiles clean. Daemon runs but screencapture requires Screen Recording permission to actually capture frames.
-- **What's next:** Phase 2 — build relay server to receive frames and serve to clients.
-- **Blockers:** Screen Recording permission needed at runtime (expected, not a code issue).
+- **What happened:** Node.js project setup. Capture daemon with screencapture + sips pipeline, stdout and WebSocket modes, auto-reconnect.
+- **What's next:** Phase 2 — relay server.
+- **Blockers:** Screen Recording permission needed at runtime.
 
 ### Session 0 — Project Scaffold + Reference Analysis
 - **Date:** 2026-03-17
-- **What happened:** Created project documentation (PRIMER.md, DEVLOG.md, TODO.md, .gitignore, README.md). Read every file in the reference codebase (~/reference/desk-mirror) — CLAUDE.md, PRIMER.md, AGENTS.md, SPRINTS.md, GITHUB.md, README.md, config.json, PROTOCOL.md, all daemon source (main.py, macos.py, commands.py, differ.py, models.py, config.py), all server source (index.ts, rooms.ts, state.ts, types.ts, logger.ts, config.ts), all client source (App.tsx, DesktopCanvas.tsx, WindowBlock.tsx, useWebSocket.ts, useDrag.ts, useLayout.ts), and start scripts. Documented architecture differences, what to borrow vs change, and key decisions.
-- **What's next:** Phase 1 — build the screen capture daemon (capture.ts, config.ts, index.ts).
+- **What happened:** Created docs. Analysed entire reference codebase (desk-mirror). Documented architecture decisions.
+- **What's next:** Phase 1 — capture daemon.
 - **Blockers:** None.
