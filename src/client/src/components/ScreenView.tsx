@@ -4,13 +4,15 @@ interface ScreenViewProps {
   frameUrl: string | null;
   daemonConnected: boolean;
   connected: boolean;
+  debugInfo?: string;
 }
 
-export function ScreenView({ frameUrl, daemonConnected, connected }: ScreenViewProps) {
+export function ScreenView({ frameUrl, daemonConnected, connected, debugInfo }: ScreenViewProps) {
   if (!connected) {
     return (
       <div style={centreStyle}>
         <p style={messageStyle}>Connecting to server...</p>
+        {debugInfo && <p style={debugStyle}>{debugInfo}</p>}
       </div>
     );
   }
@@ -45,15 +47,26 @@ export function ScreenView({ frameUrl, daemonConnected, connected }: ScreenViewP
 
 const centreStyle: React.CSSProperties = {
   display: "flex",
+  flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
   height: "100%",
   width: "100%",
+  gap: 8,
 };
 
 const messageStyle: React.CSSProperties = {
   color: "#666",
   fontSize: "1.1rem",
+};
+
+const debugStyle: React.CSSProperties = {
+  color: "#444",
+  fontSize: "0.75rem",
+  fontFamily: "monospace",
+  wordBreak: "break-all",
+  padding: "0 20px",
+  textAlign: "center",
 };
 
 const containerStyle: React.CSSProperties = {

@@ -31,6 +31,42 @@ import {
 
 const app = express();
 
+// Quick WebSocket test page
+app.get("/wstest", (_req, res) => {
+  res.type("html").send(`<!DOCTYPE html><html><head>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    </head><body style="margin:0;background:#0a0a0a;overflow:hidden">
+    <div id="status" style="position:fixed;top:0;left:0;right:0;height:28px;background:rgba(10,10,10,0.9);color:#ccc;font:12px monospace;display:flex;align-items:center;padding:0 8px;z-index:10"></div>
+    <img id="screen" style="width:100%;height:100%;object-fit:contain;padding-top:28px;box-sizing:border-box">
+    <script>
+      const img = document.getElementById('screen');
+      const status = document.getElementById('status');
+      let prevUrl = null;
+      const url = 'ws://' + location.host + '/client';
+      status.textContent = 'Connecting to ' + url + '...';
+      const ws = new WebSocket(url);
+      ws.binaryType = 'arraybuffer';
+      ws.onopen = () => { status.textContent = 'Connected'; status.style.color = '#22c55e'; };
+      ws.onmessage = (e) => {
+        if (e.data instanceof ArrayBuffer) {
+          const blob = new Blob([e.data], {type:'image/jpeg'});
+          const u = URL.createObjectURL(blob);
+          img.src = u;
+          if (prevUrl) URL.revokeObjectURL(prevUrl);
+          prevUrl = u;
+        } else {
+          try {
+            const m = JSON.parse(e.data);
+            if (m.type === 'status') status.textContent = (m.daemonConnected ? '● ' : '○ ') + m.fps + ' FPS · ' + m.clientCount + ' clients · ' + m.latencyMs + 'ms';
+          } catch {}
+        }
+      };
+      ws.onerror = () => { status.textContent = 'Error'; status.style.color = '#ef4444'; };
+      ws.onclose = () => { status.textContent = 'Disconnected'; status.style.color = '#ef4444'; };
+    </script></body></html>`);
+});
+
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
@@ -44,6 +80,11 @@ app.get("/health", (_req, res) => {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const clientDist = resolve(__dirname, "..", "client", "dist");
 if (existsSync(clientDist)) {
+  // No caching during dev — ensures fresh builds are always served
+  app.use((_req, res, next) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    next();
+  });
   app.use(express.static(clientDist));
   // SPA fallback — serve index.html for all non-API routes
   app.get("/{*path}", (_req, res) => {
@@ -150,8 +191,8 @@ const statusTimer = setInterval(() => {
 
 // --- Start ---
 
-httpServer.listen(PORT, () => {
-  logger.info("Relay server listening", { port: PORT });
+httpServer.listen(PORT, "0.0.0.0", () => {
+  logger.info("Relay server listening", { port: PORT, host: "0.0.0.0" });
 });
 
 // --- Graceful shutdown ---

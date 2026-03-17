@@ -12,11 +12,10 @@ import { VirtualKeyboard } from "./components/VirtualKeyboard";
 function autoDetectUrl(): string | null {
   const saved = getServerUrl();
   if (saved) return saved;
-  // If served from the relay server, auto-connect to same host
-  if (window.location.hostname && window.location.hostname !== "localhost") {
-    return `ws://${window.location.hostname}:${window.location.port || "3847"}`;
-  }
-  return null;
+  // Auto-connect to the same host that served this page
+  const host = window.location.hostname || "localhost";
+  const port = window.location.port || "3847";
+  return `ws://${host}:${port}`;
 }
 
 export function App() {
@@ -24,7 +23,7 @@ export function App() {
   const [showSettings, setShowSettings] = useState(serverUrl === null);
   const [showKeyboard, setShowKeyboard] = useState(false);
 
-  const { frameUrl, status, connected, send } = useWebSocket(serverUrl);
+  const { frameUrl, status, connected, debugInfo, send } = useWebSocket(serverUrl);
   const { transform, isZoomed, handlers: zoomHandlers } = useZoom();
 
   if (showSettings) {
@@ -55,6 +54,7 @@ export function App() {
               frameUrl={frameUrl}
               daemonConnected={status?.daemonConnected ?? false}
               connected={connected}
+              debugInfo={debugInfo}
             />
           </div>
         </TouchOverlay>

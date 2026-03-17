@@ -22,6 +22,8 @@ export interface UseWebSocketReturn {
   status: StatusData | null;
   /** Whether the WebSocket is currently connected. */
   connected: boolean;
+  /** Debug info — the URL being connected to and last error. */
+  debugInfo: string;
   /** Send a JSON message to the server. */
   send: (data: Record<string, unknown>) => void;
 }
@@ -30,6 +32,7 @@ export function useWebSocket(serverUrl: string | null): UseWebSocketReturn {
   const [frameUrl, setFrameUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusData | null>(null);
   const [connected, setConnected] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>("initialising...");
 
   const wsRef = useRef<WebSocket | null>(null);
   const prevUrlRef = useRef<string | null>(null);
@@ -53,6 +56,7 @@ export function useWebSocket(serverUrl: string | null): UseWebSocketReturn {
       if (!mounted) return;
 
       const url = `${serverUrl}/client`;
+      setDebugInfo(`connecting to ${url}`);
       const ws = new WebSocket(url);
       ws.binaryType = "arraybuffer";
       wsRef.current = ws;
@@ -60,6 +64,7 @@ export function useWebSocket(serverUrl: string | null): UseWebSocketReturn {
       ws.onopen = () => {
         if (!mounted) return;
         setConnected(true);
+        setDebugInfo(`connected to ${url}`);
         backoff = 1000;
       };
 
@@ -100,7 +105,9 @@ export function useWebSocket(serverUrl: string | null): UseWebSocketReturn {
         }, backoff);
       };
 
-      ws.onerror = () => {
+      ws.onerror = (ev) => {
+        if (!mounted) return;
+        setDebugInfo(`error connecting to ${url} (${ev.type})`);
         // onclose will fire after this
       };
     }
@@ -129,5 +136,5 @@ export function useWebSocket(serverUrl: string | null): UseWebSocketReturn {
     prevUrlRef.current = frameUrl;
   }, [frameUrl]);
 
-  return { frameUrl, status, connected, send };
+  return { frameUrl, status, connected, debugInfo, send };
 }
