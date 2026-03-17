@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-03-17 — Phase 1: Capture Daemon
+
+### What Was Done
+- Set up Node.js project with TypeScript (package.json, tsconfig.json, deps)
+- Created `config.json` — central config for capture settings (fps, quality, scale, port)
+- Built `src/daemon/config.ts` — loads config.json + env var overrides
+- Built `src/daemon/capture.ts` — screen capture using macOS `screencapture` CLI
+  - Captures to temp JPEG, reads buffer, cleans up
+  - Post-processes with `sips` for quality/scale control
+  - Clear permission warning if Screen Recording not granted
+- Built `src/daemon/index.ts` — daemon entry point with two modes:
+  - `--stdout` mode for testing capture without a server
+  - WebSocket mode for streaming to relay server
+  - Auto-reconnect with exponential backoff (1s → 30s max)
+  - Structured JSON logging, graceful SIGINT/SIGTERM handling
+  - Frame stats logged every N frames (size, latency, actual FPS)
+
+### Notes
+- `screencapture` requires Screen Recording permission in System Settings > Privacy & Security
+- Without permission it fails with "could not create image from display" — daemon handles this gracefully with a clear instruction message
+- `sips` (built into macOS) handles JPEG quality and resize — no npm native addons needed
+- At 0.5 scale, frames should be ~30-60KB JPEG depending on screen content
+
+---
+
 ## 2026-03-17 — Reference Analysis + Project Scaffold
 
 ### What Was Done

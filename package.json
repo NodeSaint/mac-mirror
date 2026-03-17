@@ -1,0 +1,31 @@
+{
+  "name": "mac-mirror",
+  "version": "0.1.0",
+  "description": "Real-time Mac screen mirroring over Tailscale",
+  "type": "module",
+  "scripts": {
+    "daemon": "tsx src/daemon/index.ts",
+    "server": "tsx src/server/index.ts",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NodeSaint/mac-mirror.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NodeSaint/mac-mirror/issues"
+  },
+  "homepage": "https://github.com/NodeSaint/mac-mirror#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

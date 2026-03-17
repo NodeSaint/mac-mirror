@@ -8,11 +8,11 @@
 
 | Field               | Value                        |
 |---------------------|------------------------------|
-| **Current Phase**   | Phase 0 — Project scaffold   |
-| **Last Session**    | Session 0                    |
+| **Current Phase**   | Phase 1 — Capture daemon (complete) |
+| **Last Session**    | Session 1                    |
 | **Last Updated**    | 2026-03-17                   |
-| **Blocker**         | None                         |
-| **Next Action**     | Phase 1 — Screen capture daemon |
+| **Blocker**         | None (Screen Recording permission needed for runtime) |
+| **Next Action**     | Phase 2 — Relay server |
 
 ---
 
@@ -165,12 +165,17 @@ mac-mirror/
 
 - Project scaffold (docs, .gitignore, README placeholder)
 - Reference codebase analysis complete
+- **Capture Daemon** (`src/daemon/`) — Node.js daemon that captures macOS screen via `screencapture` CLI, post-processes with `sips` for quality/scale control, streams binary JPEG frames over WebSocket. Two modes: `--stdout` for testing, WebSocket for server connection. Auto-reconnect, graceful shutdown, structured logging.
 
 ---
 
 ## What Works
 
-_Nothing yet — no application code written._
+- `npm run daemon -- --stdout` — runs capture loop, logs frame stats (requires Screen Recording permission)
+- `npm run daemon` — connects to relay server at configured host:port, streams binary frames
+- TypeScript strict mode, clean compile
+- Config loading from config.json + env var overrides
+- Graceful permission error handling with clear user instructions
 
 ---
 
@@ -193,6 +198,12 @@ _N/A_
 ## Session Log
 
 > Most recent at the top.
+
+### Session 1 — Phase 1: Capture Daemon
+- **Date:** 2026-03-17
+- **What happened:** Set up Node.js project (package.json, tsconfig.json, deps: ws, express, tsx, typescript). Created config.json. Built capture daemon with three files: config.ts (config loading), capture.ts (screen capture via screencapture + sips), index.ts (entry point with stdout/WebSocket modes). Added permission warning for Screen Recording. TypeScript compiles clean. Daemon runs but screencapture requires Screen Recording permission to actually capture frames.
+- **What's next:** Phase 2 — build relay server to receive frames and serve to clients.
+- **Blockers:** Screen Recording permission needed at runtime (expected, not a code issue).
 
 ### Session 0 — Project Scaffold + Reference Analysis
 - **Date:** 2026-03-17

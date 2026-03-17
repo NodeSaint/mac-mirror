@@ -1,0 +1,12 @@
+{
+  "port": 3847,
+  "capture": {
+    "fps": 10,
+    "quality": 60,
+    "scale": 0.5,
+    "format": "jpeg"
+  },
+  "input": {
+    "enabled": true
+  }
+}

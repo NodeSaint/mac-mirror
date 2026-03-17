@@ -21,23 +21,6 @@ _Nothing currently in progress._
 
 ## Up Next
 
-### Phase 1 — Screen Capture Daemon
-> Get frames off the screen and into a WebSocket pipe.
-
-- [ ] Set up Node.js project (package.json, tsconfig.json) at repo root
-- [ ] Create `config.json` with capture settings (fps, quality, scale, port)
-- [ ] Create `src/daemon/config.ts` — load config.json + env var overrides
-- [ ] Create `src/daemon/capture.ts` — capture screen via `screencapture` CLI
-  - [ ] Capture to temp file, read as buffer, clean up
-  - [ ] Configurable FPS, JPEG quality, and scale factor
-  - [ ] Measure and log capture latency per frame
-- [ ] Create `src/daemon/index.ts` — entry point with capture loop + WebSocket client
-  - [ ] Connect to relay server at `/daemon`
-  - [ ] Send binary JPEG frames at configured FPS
-  - [ ] Auto-reconnect with exponential backoff
-  - [ ] Graceful shutdown on SIGINT/SIGTERM
-- [ ] Test: daemon runs, captures frames, logs output
-
 ### Phase 2 — Relay Server
 > Receive frames from daemon, broadcast to browser clients, route input back.
 
@@ -117,6 +100,24 @@ _Nothing currently in progress._
 ---
 
 ## Done
+
+### Phase 1 — Screen Capture Daemon
+- [x] Set up Node.js project (package.json, tsconfig.json) at repo root
+- [x] Create `config.json` with capture settings (fps, quality, scale, port)
+- [x] Create `src/daemon/config.ts` — load config.json + env var overrides
+- [x] Create `src/daemon/capture.ts` — capture screen via `screencapture` CLI
+  - [x] Capture to temp file, read as buffer, clean up
+  - [x] Configurable FPS, JPEG quality, and scale factor
+  - [x] Measure and log capture latency per frame
+  - [x] Permission warning with clear instructions if Screen Recording not granted
+- [x] Create `src/daemon/index.ts` — entry point with capture loop + WebSocket client
+  - [x] `--stdout` mode for testing without server
+  - [x] WebSocket mode connecting to relay server at `/daemon`
+  - [x] Send binary JPEG frames at configured FPS
+  - [x] Auto-reconnect with exponential backoff (1s → 30s max)
+  - [x] Graceful shutdown on SIGINT/SIGTERM
+- [x] Post-processing via `sips` for quality/scale control
+- [x] TypeScript strict, clean compile, structured JSON logging
 
 ### Phase 0 — Project Scaffold
 - [x] Create project directory structure
