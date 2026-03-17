@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>Mac Mirror</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0a;
+      font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+      touch-action:none;user-select:none;-webkit-user-select:none;position:fixed}
+    #status{position:fixed;top:0;left:0;right:0;height:32px;
+      background:rgba(10,10,10,0.9);backdrop-filter:blur(8px);
+      color:#ccc;font:13px/32px -apple-system,sans-serif;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 12px;z-index:100;border-bottom:1px solid #222}
+    #status .left{display:flex;align-items:center;gap:8px}
+    #status .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    #status .right{display:flex;gap:4px}
+    #status button{background:none;border:none;color:#888;font-size:18px;
+      cursor:pointer;padding:4px;line-height:1}
+    #viewport{position:absolute;top:32px;left:0;right:0;bottom:0;
+      display:flex;align-items:center;justify-content:center;overflow:hidden}
+    #screen{max-width:100%;max-height:100%;object-fit:contain;display:block}
+    #msg{color:#666;font-size:1.1rem;position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%)}
+    #keyboard{position:fixed;bottom:0;left:0;right:0;height:48px;
+      background:rgba(26,26,26,0.95);backdrop-filter:blur(8px);
+      display:none;align-items:center;padding:0 12px;gap:8px;
+      z-index:150;border-top:1px solid #333}
+    #keyboard input{flex:1;background:#0a0a0a;border:1px solid #444;
+      border-radius:8px;padding:8px 12px;font-size:16px;color:#fff;outline:none}
+    #keyboard button{background:none;border:1px solid #444;border-radius:8px;
+      padding:8px 12px;color:#aaa;cursor:pointer;font-size:14px}
+  </style>
+</head>
+<body>
+  <div id="status">
+    <div class="left">
+      <span class="dot" id="dot" style="background:#ef4444"></span>
+      <span id="label">Connecting...</span>
+    </div>
+    <div class="right">
+      <button id="kbBtn" aria-label="Keyboard">&#9000;</button>
+    </div>
+  </div>
+  <div id="viewport">
+    <span id="msg">Connecting to server...</span>
+    <img id="screen" style="display:none" draggable="false">
+  </div>
+  <div id="keyboard">
+    <input type="text" id="kbInput" placeholder="Type here..." autocapitalize="none" autocomplete="off" autocorrect="off">
+    <button id="kbClose">Done</button>
+  </div>
+
+<script>
+// --- Elements ---
+const img = document.getElementById('screen');
+const msg = document.getElementById('msg');
+const dot = document.getElementById('dot');
+const label = document.getElementById('label');
+const kbDiv = document.getElementById('keyboard');
+const kbInput = document.getElementById('kbInput');
+const kbBtn = document.getElementById('kbBtn');
+const kbClose = document.getElementById('kbClose');
+const viewport = document.getElementById('viewport');
+
+// --- WebSocket ---
+let ws = null;
+let prevUrl = null;
+let reconnectTimer = null;
+let backoff = 1000;
+
+function connect() {
+  const url = 'ws://' + location.host + '/client';
+  ws = new WebSocket(url);
+  ws.binaryType = 'arraybuffer';
+
+  ws.onopen = () => {
+    backoff = 1000;
+    dot.style.background = '#f59e0b';
+    label.textContent = 'Waiting for daemon...';
+  };
+
+  ws.onmessage = (e) => {
+    if (e.data instanceof ArrayBuffer) {
+      const blob = new Blob([e.data], { type: 'image/jpeg' });
+      const u = URL.createObjectURL(blob);
+      img.src = u;
+      img.style.display = 'block';
+      msg.style.display = 'none';
+      if (prevUrl) URL.revokeObjectURL(prevUrl);
+      prevUrl = u;
+    } else {
+      try {
+        const m = JSON.parse(e.data);
+        if (m.type === 'status') {
+          if (m.daemonConnected) {
+            dot.style.background = '#22c55e';
+            label.textContent = m.fps + ' FPS · ' + m.latencyMs + 'ms';
+          } else {
+            dot.style.background = '#f59e0b';
+            label.textContent = 'No daemon';
+            msg.textContent = 'Waiting for desktop daemon...';
+            msg.style.display = 'block';
+            img.style.display = 'none';
+          }
+        }
+      } catch {}
+    }
+  };
+
+  ws.onerror = () => {};
+
+  ws.onclose = () => {
+    dot.style.background = '#ef4444';
+    label.textContent = 'Disconnected';
+    ws = null;
+    reconnectTimer = setTimeout(() => {
+      backoff = Math.min(backoff * 2, 30000);
+      connect();
+    }, backoff);
+  };
+}
+
+function send(data) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(data));
+  }
+}
+
+connect();
+
+// --- Coordinate mapping ---
+function toScreenCoords(clientX, clientY) {
+  const rect = img.getBoundingClientRect();
+  const relX = clientX - rect.left;
+  const relY = clientY - rect.top;
+  if (relX < 0 || relY < 0 || relX > rect.width || relY > rect.height) return null;
+  return {
+    x: (relX / rect.width) * img.naturalWidth,
+    y: (relY / rect.height) * img.naturalHeight
+  };
+}
+
+// --- Touch input ---
+let touchStartTime = 0;
+let touchStartPos = null;
+let isDragging = false;
+let lastTapTime = 0;
+const DRAG_THRESHOLD = 10;
+
+function haptic(ms) { try { navigator.vibrate && navigator.vibrate(ms || 10); } catch {} }
+
+viewport.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    // Two-finger tap → right click
+    const c = toScreenCoords(e.touches[0].clientX, e.touches[0].clientY);
+    if (c) {
+      haptic(15);
+      send({ type: 'input:mouse', x: c.x, y: c.y, button: 'right', action: 'click' });
+    }
+    e.preventDefault();
+    return;
+  }
+  touchStartTime = Date.now();
+  touchStartPos = { cx: e.touches[0].clientX, cy: e.touches[0].clientY };
+  isDragging = false;
+  e.preventDefault();
+}, { passive: false });
+
+viewport.addEventListener('touchmove', (e) => {
+  if (e.touches.length !== 1 || !touchStartPos) return;
+  const dx = e.touches[0].clientX - touchStartPos.cx;
+  const dy = e.touches[0].clientY - touchStartPos.cy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (!isDragging && dist > DRAG_THRESHOLD) {
+    isDragging = true;
+    const c = toScreenCoords(touchStartPos.cx, touchStartPos.cy);
+    if (c) send({ type: 'input:mouse', x: c.x, y: c.y, action: 'dragstart' });
+  }
+  if (isDragging) {
+    const c = toScreenCoords(e.touches[0].clientX, e.touches[0].clientY);
+    if (c) send({ type: 'input:mouse', x: c.x, y: c.y, action: 'dragmove' });
+  }
+  e.preventDefault();
+}, { passive: false });
+
+viewport.addEventListener('touchend', (e) => {
+  if (isDragging) {
+    const t = e.changedTouches[0];
+    if (t) {
+      const c = toScreenCoords(t.clientX, t.clientY);
+      if (c) {
+        haptic();
+        send({ type: 'input:mouse', x: c.x, y: c.y, action: 'dragend' });
+      }
+    }
+    isDragging = false;
+    touchStartPos = null;
+    return;
+  }
+
+  if (!touchStartPos) return;
+  const c = toScreenCoords(touchStartPos.cx, touchStartPos.cy);
+  if (!c) { touchStartPos = null; return; }
+
+  const now = Date.now();
+  if (now - lastTapTime < 300) {
+    haptic(15);
+    send({ type: 'input:mouse', x: c.x, y: c.y, action: 'dblclick' });
+    lastTapTime = 0;
+  } else {
+    haptic();
+    send({ type: 'input:mouse', x: c.x, y: c.y, button: 'left', action: 'click' });
+    lastTapTime = now;
+  }
+  touchStartPos = null;
+  e.preventDefault();
+}, { passive: false });
+
+// --- Scroll (wheel for desktop testing) ---
+viewport.addEventListener('wheel', (e) => {
+  const c = toScreenCoords(e.clientX, e.clientY);
+  if (c) {
+    send({ type: 'input:scroll', x: c.x, y: c.y, deltaX: e.deltaX, deltaY: e.deltaY });
+  }
+  e.preventDefault();
+}, { passive: false });
+
+// --- Keyboard ---
+kbBtn.addEventListener('click', () => {
+  const visible = kbDiv.style.display === 'flex';
+  kbDiv.style.display = visible ? 'none' : 'flex';
+  if (!visible) kbInput.focus();
+});
+
+kbClose.addEventListener('click', () => {
+  kbDiv.style.display = 'none';
+});
+
+kbInput.addEventListener('keydown', (e) => {
+  e.preventDefault();
+  if (e.key === 'Escape') { kbDiv.style.display = 'none'; return; }
+  const modifiers = [];
+  if (e.metaKey) modifiers.push('cmd');
+  if (e.altKey) modifiers.push('alt');
+  if (e.ctrlKey) modifiers.push('ctrl');
+  if (e.shiftKey) modifiers.push('shift');
+  send({ type: 'input:key', key: e.key, modifiers });
+});
+</script>
+</body>
+</html>
