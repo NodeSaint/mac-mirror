@@ -32,3 +32,7 @@ npm-debug.log*
 # Coverage
 coverage/
 .nyc_output/
+
+# Local docs
+CLAUDE.md
+docs/PRIMER.md
