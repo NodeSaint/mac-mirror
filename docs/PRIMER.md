@@ -8,11 +8,11 @@
 
 | Field               | Value                        |
 |---------------------|------------------------------|
-| **Current Phase**   | Phase 1 — Capture daemon (complete) |
-| **Last Session**    | Session 1                    |
+| **Current Phase**   | Phase 2 — Relay server (complete) |
+| **Last Session**    | Session 2                    |
 | **Last Updated**    | 2026-03-17                   |
-| **Blocker**         | None (Screen Recording permission needed for runtime) |
-| **Next Action**     | Phase 2 — Relay server |
+| **Blocker**         | None |
+| **Next Action**     | Phase 3 — Browser client (view only) |
 
 ---
 
@@ -166,6 +166,7 @@ mac-mirror/
 - Project scaffold (docs, .gitignore, README placeholder)
 - Reference codebase analysis complete
 - **Capture Daemon** (`src/daemon/`) — Node.js daemon that captures macOS screen via `screencapture` CLI, post-processes with `sips` for quality/scale control, streams binary JPEG frames over WebSocket. Two modes: `--stdout` for testing, WebSocket for server connection. Auto-reconnect, graceful shutdown, structured logging.
+- **Relay Server** (`src/server/`) — Express + ws server on port 3847. `/daemon` path accepts single daemon connection (binary JPEG frames), `/client` path accepts multiple browser clients (JSON input commands). Relays frames daemon → clients, routes input clients → daemon. `/health` HTTP endpoint. Status broadcast every 5s with FPS, latency, client count. Graceful shutdown.
 
 ---
 
@@ -173,6 +174,7 @@ mac-mirror/
 
 - `npm run daemon -- --stdout` — runs capture loop, logs frame stats (requires Screen Recording permission)
 - `npm run daemon` — connects to relay server at configured host:port, streams binary frames
+- `npm run server` — starts relay server on port 3847, `/health` endpoint responds
 - TypeScript strict mode, clean compile
 - Config loading from config.json + env var overrides
 - Graceful permission error handling with clear user instructions
@@ -198,6 +200,12 @@ _N/A_
 ## Session Log
 
 > Most recent at the top.
+
+### Session 2 — Phase 2: Relay Server
+- **Date:** 2026-03-17
+- **What happened:** Built relay server with 4 files: logger.ts (structured JSON logging), config.ts (port + status interval from config.json + env vars), rooms.ts (single daemon slot, client pool, frame broadcast, FPS tracking, status messages), index.ts (Express + ws, /daemon and /client WebSocket paths, /health HTTP endpoint, input routing, graceful shutdown). TypeScript compiles clean. Smoke tested: server starts, /health responds, shuts down cleanly.
+- **What's next:** Phase 3 — browser client (React + Vite, view only).
+- **Blockers:** None.
 
 ### Session 1 — Phase 1: Capture Daemon
 - **Date:** 2026-03-17

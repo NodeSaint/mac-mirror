@@ -21,23 +21,6 @@ _Nothing currently in progress._
 
 ## Up Next
 
-### Phase 2 — Relay Server
-> Receive frames from daemon, broadcast to browser clients, route input back.
-
-- [ ] Create `src/server/index.ts` — Express + WebSocket server
-  - [ ] `/daemon` path — single daemon connection, receives binary frames
-  - [ ] `/client` path — multiple clients, receives JSON input commands
-  - [ ] Relay binary frames daemon → all clients
-  - [ ] Relay JSON input commands client → daemon
-  - [ ] `/health` HTTP endpoint
-- [ ] Create `src/server/rooms.ts` — connection management (from reference pattern)
-  - [ ] Single daemon slot + client pool
-  - [ ] Daemon disconnect notifies clients via status message
-- [ ] Create `src/server/config.ts` — port + status interval config
-- [ ] Create `src/server/logger.ts` — structured JSON logging
-- [ ] Status broadcast every 5s (daemon connected, FPS, client count, latency)
-- [ ] Test: server starts, accepts connections, relays frames
-
 ### Phase 3 — Browser Client (View Only)
 > Display the screen stream in a browser. No input yet.
 
@@ -100,6 +83,21 @@ _Nothing currently in progress._
 ---
 
 ## Done
+
+### Phase 2 — Relay Server
+- [x] Create `src/server/index.ts` — Express + WebSocket server
+  - [x] `/daemon` path — single daemon connection, receives binary frames
+  - [x] `/client` path — multiple clients, receives JSON input commands
+  - [x] Relay binary frames daemon → all clients
+  - [x] Relay JSON input commands client → daemon
+  - [x] `/health` HTTP endpoint
+- [x] Create `src/server/rooms.ts` — connection management (from reference pattern)
+  - [x] Single daemon slot + client pool
+  - [x] Daemon disconnect notifies clients via status message
+- [x] Create `src/server/config.ts` — port + status interval config
+- [x] Create `src/server/logger.ts` — structured JSON logging
+- [x] Status broadcast every 5s (daemon connected, FPS, client count, latency)
+- [x] Test: server starts, accepts connections, relays frames
 
 ### Phase 1 — Screen Capture Daemon
 - [x] Set up Node.js project (package.json, tsconfig.json) at repo root
