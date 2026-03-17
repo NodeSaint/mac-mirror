@@ -142,7 +142,7 @@ function handleDaemon(ws: WebSocket): void {
 
   ws.on("close", () => {
     logger.info("Daemon disconnected");
-    removeDaemon();
+    removeDaemon(ws);
   });
 
   ws.on("error", (err) => {

@@ -25,7 +25,10 @@ export function setDaemon(ws: WebSocket): boolean {
   return true;
 }
 
-export function removeDaemon(): void {
+export function removeDaemon(ws: WebSocket): void {
+  // Only remove if this is still the active daemon (prevents race condition
+  // where an old daemon's close handler nulls out a newer daemon's reference)
+  if (daemon !== ws) return;
   daemon = null;
   broadcastJSON({
     type: "status",
