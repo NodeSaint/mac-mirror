@@ -1,16 +1,19 @@
-/** Root component — connects to relay server, displays screen stream. */
+/** Root component — connects to relay server, displays screen stream with input. */
 
 import { useState } from "react";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { ScreenView } from "./components/ScreenView";
 import { StatusBar } from "./components/StatusBar";
 import { Settings, getServerUrl } from "./components/Settings";
+import { TouchOverlay } from "./components/TouchOverlay";
+import { VirtualKeyboard } from "./components/VirtualKeyboard";
 
 export function App() {
   const [serverUrl, setServerUrl] = useState<string | null>(getServerUrl);
   const [showSettings, setShowSettings] = useState(serverUrl === null);
+  const [showKeyboard, setShowKeyboard] = useState(false);
 
-  const { frameUrl, status, connected } = useWebSocket(serverUrl);
+  const { frameUrl, status, connected, send } = useWebSocket(serverUrl);
 
   if (showSettings) {
     return (
@@ -31,14 +34,22 @@ export function App() {
         connected={connected}
         status={status}
         onSettingsClick={() => setShowSettings(true)}
+        onKeyboardClick={() => setShowKeyboard((v) => !v)}
       />
       <div style={viewportStyle}>
-        <ScreenView
-          frameUrl={frameUrl}
-          daemonConnected={status?.daemonConnected ?? false}
-          connected={connected}
-        />
+        <TouchOverlay send={send}>
+          <ScreenView
+            frameUrl={frameUrl}
+            daemonConnected={status?.daemonConnected ?? false}
+            connected={connected}
+          />
+        </TouchOverlay>
       </div>
+      <VirtualKeyboard
+        visible={showKeyboard}
+        send={send}
+        onClose={() => setShowKeyboard(false)}
+      />
     </>
   );
 }

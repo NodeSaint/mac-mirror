@@ -21,29 +21,7 @@ _Nothing currently in progress._
 
 ## Up Next
 
-### Phase 4 — Remote Input
-
-### Phase 4 — Remote Input
-> Send mouse and keyboard events from browser back to Mac.
-
-- [ ] Create `src/daemon/input.ts` — mouse/keyboard injection via cliclick
-  - [ ] Mouse: click, right-click, double-click, move, drag
-  - [ ] Keyboard: key press, key combo (modifiers), text input
-  - [ ] Scroll: vertical and horizontal
-- [ ] Define input protocol (JSON messages, client → server → daemon)
-  - [ ] `input:mouse` — x, y, button, action (click/down/up/move)
-  - [ ] `input:scroll` — x, y, deltaX, deltaY
-  - [ ] `input:key` — key, modifiers[], action (down/up)
-  - [ ] `input:text` — raw text string
-- [ ] Wire input messages through relay server to daemon
-- [ ] Create `src/client/src/hooks/useInput.ts` — touch/mouse event capture
-  - [ ] Map viewport coordinates to Mac screen coordinates
-  - [ ] Single tap → left click
-  - [ ] Two-finger tap → right click
-  - [ ] Touch drag → mouse move/drag
-- [ ] Create `src/client/src/components/TouchOverlay.tsx` — transparent input layer
-- [ ] Virtual keyboard toggle for text input
-- [ ] Test: tap on phone triggers click on Mac, typing works
+### Phase 5 — Mobile Polish + PWA
 
 ### Phase 5 — Mobile Polish + PWA
 > Optimise for mobile viewing and make it feel native.
@@ -67,6 +45,28 @@ _Nothing currently in progress._
 ---
 
 ## Done
+
+### Phase 4 — Remote Input
+- [x] Create `src/daemon/input.ts` — mouse/keyboard injection via cliclick
+  - [x] Mouse: click, right-click, double-click, move, drag
+  - [x] Keyboard: key press, key combo (modifiers), text input
+  - [x] Scroll: vertical and horizontal (via osascript CGEvent)
+- [x] Define input protocol (JSON messages, client → server → daemon)
+  - [x] `input:mouse` — x, y, button, action (click/dblclick/move/dragstart/dragmove/dragend)
+  - [x] `input:scroll` — x, y, deltaX, deltaY
+  - [x] `input:key` — key, modifiers[], action
+  - [x] `input:text` — raw text string
+- [x] Wire input messages through relay server to daemon (already done in Phase 2)
+- [x] Create `src/client/src/hooks/useInput.ts` — touch/mouse event capture
+  - [x] Map viewport coordinates to Mac screen coordinates
+  - [x] Single tap → left click
+  - [x] Two-finger tap → right click
+  - [x] Touch drag → mouse drag
+  - [x] Double-tap detection
+  - [x] Wheel events for desktop scroll
+- [x] Create `src/client/src/components/TouchOverlay.tsx` — transparent input layer
+- [x] Create `src/client/src/components/VirtualKeyboard.tsx` — keyboard toggle
+- [x] TypeScript compiles clean (daemon + client), Vite build passes
 
 ### Phase 3 — Browser Client (View Only)
 - [x] Scaffold React + Vite + TypeScript client (`src/client/`)

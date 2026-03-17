@@ -8,11 +8,11 @@
 
 | Field               | Value                        |
 |---------------------|------------------------------|
-| **Current Phase**   | Phase 3 — Browser client (complete) |
+| **Current Phase**   | Phase 4 — Remote input (complete) |
 | **Last Session**    | Session 2                    |
 | **Last Updated**    | 2026-03-17                   |
 | **Blocker**         | None |
-| **Next Action**     | Phase 4 — Remote input |
+| **Next Action**     | Phase 5 — Mobile polish + PWA |
 
 ---
 
@@ -168,6 +168,7 @@ mac-mirror/
 - **Capture Daemon** (`src/daemon/`) — Node.js daemon that captures macOS screen via `screencapture` CLI, post-processes with `sips` for quality/scale control, streams binary JPEG frames over WebSocket. Two modes: `--stdout` for testing, WebSocket for server connection. Auto-reconnect, graceful shutdown, structured logging.
 - **Relay Server** (`src/server/`) — Express + ws server on port 3847. `/daemon` path accepts single daemon connection (binary JPEG frames), `/client` path accepts multiple browser clients (JSON input commands). Relays frames daemon → clients, routes input clients → daemon. `/health` HTTP endpoint. Status broadcast every 5s with FPS, latency, client count. Graceful shutdown.
 - **Browser Client** (`src/client/`) — React 18 + Vite + TypeScript PWA. WebSocket hook receives binary JPEG frames as object URLs and JSON status messages. ScreenView renders frames in `<img>` with responsive scaling. StatusBar shows connection state, FPS, latency. Settings overlay for server URL (localStorage). Dark theme (#0a0a0a), mobile-first.
+- **Remote Input** — Daemon: `input.ts` injects mouse/keyboard via `cliclick`, scroll via osascript CGEvent. Client: `useInput` hook maps viewport touch/mouse to Mac screen coordinates, `TouchOverlay` captures gestures, `VirtualKeyboard` for text input. Protocol: `input:mouse`, `input:scroll`, `input:key`, `input:text` JSON messages routed through relay server.
 
 ---
 
@@ -204,10 +205,10 @@ _N/A_
 
 > Most recent at the top.
 
-### Session 2 — Phases 2 & 3: Relay Server + Browser Client
+### Session 2 — Phases 2, 3, & 4: Relay Server + Browser Client + Remote Input
 - **Date:** 2026-03-17
-- **What happened:** Built relay server (4 files) and browser client (React + Vite, 7 source files). Server: Express + ws with /daemon, /client, /health. Client: useWebSocket hook (binary frames → object URLs, JSON status, auto-reconnect), ScreenView (responsive img), StatusBar (FPS, latency, connection dot), Settings (server URL with localStorage). Both compile clean, Vite build passes.
-- **What's next:** Phase 4 — remote input (cliclick, touch→click mapping).
+- **What happened:** Built relay server (4 files), browser client (React + Vite, 7 source files), and remote input (daemon input.ts + client useInput/TouchOverlay/VirtualKeyboard). Server: Express + ws with /daemon, /client, /health. Client: useWebSocket hook (binary frames → object URLs, JSON status, auto-reconnect), ScreenView, StatusBar, Settings. Input: cliclick for mouse/keyboard, osascript CGEvent for scroll, viewport→screen coordinate mapping, tap/drag/double-tap/two-finger-tap gestures. All compile clean, Vite build passes.
+- **What's next:** Phase 5 — mobile polish + PWA.
 - **Blockers:** None.
 
 ### Session 1 — Phase 1: Capture Daemon

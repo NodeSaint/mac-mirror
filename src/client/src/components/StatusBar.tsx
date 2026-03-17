@@ -6,9 +6,10 @@ interface StatusBarProps {
   connected: boolean;
   status: StatusData | null;
   onSettingsClick: () => void;
+  onKeyboardClick: () => void;
 }
 
-export function StatusBar({ connected, status, onSettingsClick }: StatusBarProps) {
+export function StatusBar({ connected, status, onSettingsClick, onKeyboardClick }: StatusBarProps) {
   const daemonUp = status?.daemonConnected ?? false;
 
   let dotColour: string;
@@ -39,9 +40,14 @@ export function StatusBar({ connected, status, onSettingsClick }: StatusBarProps
           </span>
         )}
       </div>
-      <button onClick={onSettingsClick} style={gearStyle} aria-label="Settings">
-        &#9881;
-      </button>
+      <div style={rightStyle}>
+        <button onClick={onKeyboardClick} style={gearStyle} aria-label="Keyboard">
+          &#9000;
+        </button>
+        <button onClick={onSettingsClick} style={gearStyle} aria-label="Settings">
+          &#9881;
+        </button>
+      </div>
     </div>
   );
 }
@@ -83,6 +89,12 @@ const labelStyle: React.CSSProperties = {
 const clientsStyle: React.CSSProperties = {
   fontSize: 12,
   color: "#666",
+};
+
+const rightStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
 };
 
 const gearStyle: React.CSSProperties = {

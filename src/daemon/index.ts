@@ -13,7 +13,9 @@ import {
   CAPTURE_QUALITY,
   SERVER_HOST,
   SERVER_PORT,
+  INPUT_ENABLED,
 } from "./config.js";
+import { handleInput, type InputMessage } from "./input.js";
 
 const args = process.argv.slice(2);
 const stdoutMode = args.includes("--stdout");
@@ -114,12 +116,13 @@ async function runWebSocketMode(): Promise<void> {
       // Listen for input commands from server
       ws.on("message", (raw) => {
         try {
-          const msg = JSON.parse(String(raw)) as Record<string, unknown>;
-          const type = msg["type"] as string | undefined;
+          const msg = JSON.parse(String(raw)) as InputMessage;
 
-          if (type?.startsWith("input:")) {
-            // Input handling will be added in Phase 4
-            log("Input command received (not yet implemented)", { type });
+          if (msg.type?.startsWith("input:")) {
+            if (!INPUT_ENABLED) return;
+            handleInput(msg).catch((err) => {
+              log("Input error", { type: msg.type, error: String(err) });
+            });
           }
         } catch {
           // Malformed message — ignore
