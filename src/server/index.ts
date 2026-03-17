@@ -7,6 +7,9 @@
 
 import express from "express";
 import { createServer } from "node:http";
+import { existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
 import { PORT, STATUS_INTERVAL } from "./config.js";
 import { logger } from "./logger.js";
@@ -36,6 +39,18 @@ app.get("/health", (_req, res) => {
     uptimeSeconds: uptimeSeconds(),
   });
 });
+
+// Serve built client if dist/ exists
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const clientDist = resolve(__dirname, "..", "client", "dist");
+if (existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  // SPA fallback — serve index.html for all non-API routes
+  app.get("/{*path}", (_req, res) => {
+    res.sendFile(resolve(clientDist, "index.html"));
+  });
+  logger.info("Serving client from dist/", { path: clientDist });
+}
 
 const httpServer = createServer(app);
 

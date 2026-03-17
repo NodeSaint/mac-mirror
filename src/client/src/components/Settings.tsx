@@ -19,7 +19,8 @@ interface SettingsProps {
 }
 
 export function Settings({ currentUrl, onSave, onCancel }: SettingsProps) {
-  const [value, setValue] = useState(currentUrl ?? "ws://");
+  const defaultUrl = `ws://${window.location.hostname}:${window.location.port || "3847"}`;
+  const [value, setValue] = useState(currentUrl ?? defaultUrl);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

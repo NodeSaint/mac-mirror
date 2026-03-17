@@ -9,8 +9,18 @@ import { Settings, getServerUrl } from "./components/Settings";
 import { TouchOverlay } from "./components/TouchOverlay";
 import { VirtualKeyboard } from "./components/VirtualKeyboard";
 
+function autoDetectUrl(): string | null {
+  const saved = getServerUrl();
+  if (saved) return saved;
+  // If served from the relay server, auto-connect to same host
+  if (window.location.hostname && window.location.hostname !== "localhost") {
+    return `ws://${window.location.hostname}:${window.location.port || "3847"}`;
+  }
+  return null;
+}
+
 export function App() {
-  const [serverUrl, setServerUrl] = useState<string | null>(getServerUrl);
+  const [serverUrl, setServerUrl] = useState<string | null>(autoDetectUrl);
   const [showSettings, setShowSettings] = useState(serverUrl === null);
   const [showKeyboard, setShowKeyboard] = useState(false);
 
