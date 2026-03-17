@@ -26,6 +26,20 @@ if ! command -v cliclick &>/dev/null; then
   warn "cliclick not found — remote input will not work."
 fi
 
+# --- Kill stale processes ---
+
+STALE_PIDS=$(lsof -ti:${MAC_MIRROR_PORT:-3847} 2>/dev/null || true)
+if [ -n "$STALE_PIDS" ]; then
+  warn "Killing stale processes on port ${MAC_MIRROR_PORT:-3847}..."
+  echo "$STALE_PIDS" | xargs kill -9 2>/dev/null || true
+  sleep 1
+fi
+
+# Also kill any leftover daemon processes
+pkill -f "tsx src/daemon" 2>/dev/null || true
+pkill -f "tsx src/server" 2>/dev/null || true
+sleep 1
+
 # --- Tailscale ---
 
 TAILSCALE_IP=""
@@ -70,12 +84,11 @@ DAEMON_PID=$!
 
 echo ""
 log "=== Mac Mirror (production) ==="
-log "Health: http://localhost:$PORT/health"
+log "Local:   http://localhost:$PORT"
 if [ -n "$TAILSCALE_IP" ]; then
-  log "Tailscale IP: $TAILSCALE_IP"
-  log "Connect clients with: ws://$TAILSCALE_IP:$PORT"
+  log "Remote:  http://$TAILSCALE_IP:$PORT"
 fi
-log "Serve client build from: src/client/dist/"
+log "Health:  http://localhost:$PORT/health"
 echo ""
 log "Press Ctrl+C to stop."
 

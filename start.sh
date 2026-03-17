@@ -31,6 +31,18 @@ if ! command -v cliclick &>/dev/null; then
   warn "Install with: brew install cliclick"
 fi
 
+# --- Kill stale processes ---
+
+STALE_PIDS=$(lsof -ti:${MAC_MIRROR_PORT:-3847} 2>/dev/null || true)
+if [ -n "$STALE_PIDS" ]; then
+  warn "Killing stale processes on port ${MAC_MIRROR_PORT:-3847}..."
+  echo "$STALE_PIDS" | xargs kill -9 2>/dev/null || true
+  sleep 1
+fi
+pkill -f "tsx src/daemon" 2>/dev/null || true
+pkill -f "tsx src/server" 2>/dev/null || true
+sleep 1
+
 # --- Tailscale detection ---
 
 TAILSCALE_IP=""
