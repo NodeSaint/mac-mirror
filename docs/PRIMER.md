@@ -8,11 +8,11 @@
 
 | Field               | Value                        |
 |---------------------|------------------------------|
-| **Current Phase**   | Phase 4 — Remote input (complete) |
+| **Current Phase**   | Phase 5 — Mobile polish + PWA (complete) |
 | **Last Session**    | Session 2                    |
 | **Last Updated**    | 2026-03-17                   |
 | **Blocker**         | None |
-| **Next Action**     | Phase 5 — Mobile polish + PWA |
+| **Next Action**     | End-to-end testing on real devices |
 
 ---
 
@@ -169,6 +169,7 @@ mac-mirror/
 - **Relay Server** (`src/server/`) — Express + ws server on port 3847. `/daemon` path accepts single daemon connection (binary JPEG frames), `/client` path accepts multiple browser clients (JSON input commands). Relays frames daemon → clients, routes input clients → daemon. `/health` HTTP endpoint. Status broadcast every 5s with FPS, latency, client count. Graceful shutdown.
 - **Browser Client** (`src/client/`) — React 18 + Vite + TypeScript PWA. WebSocket hook receives binary JPEG frames as object URLs and JSON status messages. ScreenView renders frames in `<img>` with responsive scaling. StatusBar shows connection state, FPS, latency. Settings overlay for server URL (localStorage). Dark theme (#0a0a0a), mobile-first.
 - **Remote Input** — Daemon: `input.ts` injects mouse/keyboard via `cliclick`, scroll via osascript CGEvent. Client: `useInput` hook maps viewport touch/mouse to Mac screen coordinates, `TouchOverlay` captures gestures, `VirtualKeyboard` for text input. Protocol: `input:mouse`, `input:scroll`, `input:key`, `input:text` JSON messages routed through relay server.
+- **Mobile Polish + PWA** — `useZoom` hook (pinch-to-zoom 1x–5x, pan when zoomed, double-tap reset). PWA manifest + service worker (offline shell cache). Haptic feedback on taps. `start.sh` (dev launcher with pre-flight checks, Tailscale IP detection) and `start-prod.sh` (build + serve).
 
 ---
 
@@ -205,10 +206,10 @@ _N/A_
 
 > Most recent at the top.
 
-### Session 2 — Phases 2, 3, & 4: Relay Server + Browser Client + Remote Input
+### Session 2 — Phases 2–5: Full build
 - **Date:** 2026-03-17
-- **What happened:** Built relay server (4 files), browser client (React + Vite, 7 source files), and remote input (daemon input.ts + client useInput/TouchOverlay/VirtualKeyboard). Server: Express + ws with /daemon, /client, /health. Client: useWebSocket hook (binary frames → object URLs, JSON status, auto-reconnect), ScreenView, StatusBar, Settings. Input: cliclick for mouse/keyboard, osascript CGEvent for scroll, viewport→screen coordinate mapping, tap/drag/double-tap/two-finger-tap gestures. All compile clean, Vite build passes.
-- **What's next:** Phase 5 — mobile polish + PWA.
+- **What happened:** Built all remaining phases in one session. Phase 2: relay server (Express + ws, /daemon, /client, /health). Phase 3: browser client (React + Vite, useWebSocket, ScreenView, StatusBar, Settings). Phase 4: remote input (cliclick mouse/keyboard, osascript scroll, useInput, TouchOverlay, VirtualKeyboard). Phase 5: useZoom (pinch 1x–5x, pan, double-tap reset), PWA manifest + service worker, haptic feedback, start.sh + start-prod.sh. All compiles clean, Vite build passes.
+- **What's next:** End-to-end testing on real devices over Tailscale.
 - **Blockers:** None.
 
 ### Session 1 — Phase 1: Capture Daemon

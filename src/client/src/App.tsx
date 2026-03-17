@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useWebSocket } from "./hooks/useWebSocket";
+import { useZoom } from "./hooks/useZoom";
 import { ScreenView } from "./components/ScreenView";
 import { StatusBar } from "./components/StatusBar";
 import { Settings, getServerUrl } from "./components/Settings";
@@ -14,6 +15,7 @@ export function App() {
   const [showKeyboard, setShowKeyboard] = useState(false);
 
   const { frameUrl, status, connected, send } = useWebSocket(serverUrl);
+  const { transform, isZoomed, handlers: zoomHandlers } = useZoom();
 
   if (showSettings) {
     return (
@@ -37,12 +39,14 @@ export function App() {
         onKeyboardClick={() => setShowKeyboard((v) => !v)}
       />
       <div style={viewportStyle}>
-        <TouchOverlay send={send}>
-          <ScreenView
-            frameUrl={frameUrl}
-            daemonConnected={status?.daemonConnected ?? false}
-            connected={connected}
-          />
+        <TouchOverlay send={send} isZoomed={isZoomed} zoomHandlers={zoomHandlers}>
+          <div style={{ ...zoomContainerStyle, transform }}>
+            <ScreenView
+              frameUrl={frameUrl}
+              daemonConnected={status?.daemonConnected ?? false}
+              connected={connected}
+            />
+          </div>
         </TouchOverlay>
       </div>
       <VirtualKeyboard
@@ -58,4 +62,12 @@ const viewportStyle: React.CSSProperties = {
   paddingTop: 32,
   height: "100%",
   width: "100%",
+  overflow: "hidden",
+};
+
+const zoomContainerStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  transformOrigin: "center center",
+  willChange: "transform",
 };

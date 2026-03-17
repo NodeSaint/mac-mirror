@@ -2,6 +2,10 @@
 
 import { useCallback, useRef } from "react";
 
+function haptic(ms = 10): void {
+  try { navigator.vibrate?.(ms); } catch { /* not supported */ }
+}
+
 interface InputSender {
   (data: Record<string, unknown>): void;
 }
@@ -74,7 +78,8 @@ export function useInput(send: InputSender) {
         const touch = e.touches[0]!;
         const coords = toScreenCoords(touch.clientX, touch.clientY, metrics);
         if (coords) {
-          send({ type: "input:mouse", ...coords, button: "right", action: "click" });
+          haptic(15);
+        send({ type: "input:mouse", ...coords, button: "right", action: "click" });
         }
         return;
       }
@@ -156,10 +161,12 @@ export function useInput(send: InputSender) {
 
       if (now - lastTapRef.current < 300) {
         // Double tap
+        haptic(15);
         send({ type: "input:mouse", ...coords, action: "dblclick" });
         lastTapRef.current = 0;
       } else {
         // Single tap → click
+        haptic();
         send({ type: "input:mouse", ...coords, button: "left", action: "click" });
         lastTapRef.current = now;
       }

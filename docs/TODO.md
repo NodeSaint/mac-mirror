@@ -21,30 +21,27 @@ _Nothing currently in progress._
 
 ## Up Next
 
-### Phase 5 — Mobile Polish + PWA
-
-### Phase 5 — Mobile Polish + PWA
-> Optimise for mobile viewing and make it feel native.
-
-- [ ] Pinch-to-zoom with `useZoom.ts` hook
-  - [ ] Two-finger pinch to zoom in/out
-  - [ ] Pan when zoomed in
-  - [ ] Double-tap to reset zoom
-- [ ] PWA setup
-  - [ ] `manifest.json` — standalone display, dark theme, app name
-  - [ ] `sw.js` — cache app shell, show "Disconnected" when offline
-  - [ ] Installable on iOS Safari
-- [ ] Touch-friendly controls
-  - [ ] Haptic feedback on interactions (navigator.vibrate)
-  - [ ] Status bar with connection quality indicator
-- [ ] Landscape + portrait support
-- [ ] Create `start.sh` — dev launcher (pre-flight checks, dep install, Tailscale detection)
-- [ ] Create `start-prod.sh` — production mode (build client, serve static)
-- [ ] Test: end-to-end on real iPhone over Tailscale
+_Nothing — all phases complete._
 
 ---
 
 ## Done
+
+### Phase 5 — Mobile Polish + PWA
+- [x] Pinch-to-zoom with `useZoom.ts` hook
+  - [x] Two-finger pinch to zoom in/out (1x–5x)
+  - [x] Pan when zoomed in
+  - [x] Double-tap to reset zoom
+- [x] PWA setup
+  - [x] `manifest.json` — standalone display, dark theme, app name
+  - [x] `sw.js` — cache app shell, show "Disconnected" when offline
+  - [x] Service worker registration in main.tsx
+- [x] Touch-friendly controls
+  - [x] Haptic feedback on tap/right-click/double-tap (navigator.vibrate)
+  - [x] Status bar with connection quality indicator (dot colour)
+- [x] Landscape + portrait support (orientation: any in manifest)
+- [x] Create `start.sh` — dev launcher (pre-flight checks, dep install, Tailscale detection)
+- [x] Create `start-prod.sh` — production mode (build client, serve static)
 
 ### Phase 4 — Remote Input
 - [x] Create `src/daemon/input.ts` — mouse/keyboard injection via cliclick
