@@ -8,11 +8,11 @@
 
 | Field               | Value                        |
 |---------------------|------------------------------|
-| **Current Phase**   | Phase 2 — Relay server (complete) |
+| **Current Phase**   | Phase 3 — Browser client (complete) |
 | **Last Session**    | Session 2                    |
 | **Last Updated**    | 2026-03-17                   |
 | **Blocker**         | None |
-| **Next Action**     | Phase 3 — Browser client (view only) |
+| **Next Action**     | Phase 4 — Remote input |
 
 ---
 
@@ -167,6 +167,7 @@ mac-mirror/
 - Reference codebase analysis complete
 - **Capture Daemon** (`src/daemon/`) — Node.js daemon that captures macOS screen via `screencapture` CLI, post-processes with `sips` for quality/scale control, streams binary JPEG frames over WebSocket. Two modes: `--stdout` for testing, WebSocket for server connection. Auto-reconnect, graceful shutdown, structured logging.
 - **Relay Server** (`src/server/`) — Express + ws server on port 3847. `/daemon` path accepts single daemon connection (binary JPEG frames), `/client` path accepts multiple browser clients (JSON input commands). Relays frames daemon → clients, routes input clients → daemon. `/health` HTTP endpoint. Status broadcast every 5s with FPS, latency, client count. Graceful shutdown.
+- **Browser Client** (`src/client/`) — React 18 + Vite + TypeScript PWA. WebSocket hook receives binary JPEG frames as object URLs and JSON status messages. ScreenView renders frames in `<img>` with responsive scaling. StatusBar shows connection state, FPS, latency. Settings overlay for server URL (localStorage). Dark theme (#0a0a0a), mobile-first.
 
 ---
 
@@ -175,6 +176,8 @@ mac-mirror/
 - `npm run daemon -- --stdout` — runs capture loop, logs frame stats (requires Screen Recording permission)
 - `npm run daemon` — connects to relay server at configured host:port, streams binary frames
 - `npm run server` — starts relay server on port 3847, `/health` endpoint responds
+- `npm run client` — starts Vite dev server on port 5173
+- `npm run client:build` — production build to `src/client/dist/`
 - TypeScript strict mode, clean compile
 - Config loading from config.json + env var overrides
 - Graceful permission error handling with clear user instructions
@@ -201,10 +204,10 @@ _N/A_
 
 > Most recent at the top.
 
-### Session 2 — Phase 2: Relay Server
+### Session 2 — Phases 2 & 3: Relay Server + Browser Client
 - **Date:** 2026-03-17
-- **What happened:** Built relay server with 4 files: logger.ts (structured JSON logging), config.ts (port + status interval from config.json + env vars), rooms.ts (single daemon slot, client pool, frame broadcast, FPS tracking, status messages), index.ts (Express + ws, /daemon and /client WebSocket paths, /health HTTP endpoint, input routing, graceful shutdown). TypeScript compiles clean. Smoke tested: server starts, /health responds, shuts down cleanly.
-- **What's next:** Phase 3 — browser client (React + Vite, view only).
+- **What happened:** Built relay server (4 files) and browser client (React + Vite, 7 source files). Server: Express + ws with /daemon, /client, /health. Client: useWebSocket hook (binary frames → object URLs, JSON status, auto-reconnect), ScreenView (responsive img), StatusBar (FPS, latency, connection dot), Settings (server URL with localStorage). Both compile clean, Vite build passes.
+- **What's next:** Phase 4 — remote input (cliclick, touch→click mapping).
 - **Blockers:** None.
 
 ### Session 1 — Phase 1: Capture Daemon

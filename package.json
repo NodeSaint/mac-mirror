@@ -6,6 +6,8 @@
   "scripts": {
     "daemon": "tsx src/daemon/index.ts",
     "server": "tsx src/server/index.ts",
+    "client": "npm --prefix src/client run dev",
+    "client:build": "npm --prefix src/client run build",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "repository": {

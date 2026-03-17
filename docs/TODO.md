@@ -21,23 +21,7 @@ _Nothing currently in progress._
 
 ## Up Next
 
-### Phase 3 — Browser Client (View Only)
-> Display the screen stream in a browser. No input yet.
-
-- [ ] Scaffold React + Vite + TypeScript client (`src/client/`)
-- [ ] Create `src/client/src/hooks/useWebSocket.ts` — binary frame + JSON message handling
-  - [ ] Receive binary frames, convert to object URL for `<img>` rendering
-  - [ ] Receive JSON status messages
-  - [ ] Auto-reconnect with exponential backoff
-- [ ] Create `src/client/src/components/ScreenView.tsx` — frame renderer
-  - [ ] Display latest frame in `<img>` element (fastest) or `<canvas>`
-  - [ ] Responsive scaling to fit viewport
-  - [ ] Maintain aspect ratio
-- [ ] Create `src/client/src/components/StatusBar.tsx` — connection state, FPS, latency
-- [ ] Create `src/client/src/components/Settings.tsx` — server URL config, localStorage
-- [ ] Create `src/client/src/App.tsx` — root component, routing
-- [ ] Dark theme (#0a0a0a), mobile-first, system fonts
-- [ ] Test: browser connects, displays live screen capture
+### Phase 4 — Remote Input
 
 ### Phase 4 — Remote Input
 > Send mouse and keyboard events from browser back to Mac.
@@ -83,6 +67,22 @@ _Nothing currently in progress._
 ---
 
 ## Done
+
+### Phase 3 — Browser Client (View Only)
+- [x] Scaffold React + Vite + TypeScript client (`src/client/`)
+- [x] Create `src/client/src/hooks/useWebSocket.ts` — binary frame + JSON message handling
+  - [x] Receive binary frames, convert to object URL for `<img>` rendering
+  - [x] Receive JSON status messages
+  - [x] Auto-reconnect with exponential backoff
+- [x] Create `src/client/src/components/ScreenView.tsx` — frame renderer
+  - [x] Display latest frame in `<img>` element
+  - [x] Responsive scaling to fit viewport
+  - [x] Maintain aspect ratio
+- [x] Create `src/client/src/components/StatusBar.tsx` — connection state, FPS, latency
+- [x] Create `src/client/src/components/Settings.tsx` — server URL config, localStorage
+- [x] Create `src/client/src/App.tsx` — root component
+- [x] Dark theme (#0a0a0a), mobile-first, system fonts
+- [x] Test: TypeScript compiles clean, Vite build passes
 
 ### Phase 2 — Relay Server
 - [x] Create `src/server/index.ts` — Express + WebSocket server
